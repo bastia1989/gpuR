@@ -1,6 +1,14 @@
 #' @import methods
 #' @importFrom utils file_test
 
+
+#' @export
+as.matrix.gpuMatrix <- function(x, ...){
+    out <- x[]
+    return(out)
+}
+
+
 #' @title Matrix Multiplication
 #' @description Multiply two gpuR objects, if they are conformable.  If both
 #' are vectors of the same length, it will return the inner product (as a matrix).
@@ -44,7 +52,7 @@ setMethod("Arith", c(e1="gpuMatrix", e2="gpuMatrix"),
                      stop("undefined operation")
               )
           },
-valueClass = "gpuMatrix"
+          valueClass = "gpuMatrix"
 )
 
 #' @rdname Arith-methods
@@ -57,20 +65,20 @@ setMethod("Arith", c(e1="gpuMatrix", e2="numeric"),
               op = .Generic[[1]]
               switch(op,
                      `+` = {
-                         e2 <- gpuMatrix(matrix(e2, ncol=ncol(e1), nrow=nrow(e1)), type=typeof(e1))
+                         e2 <- gpuMatrix(matrix(e2, ncol=ncol(e1), nrow=nrow(e1)), type=typeof(e1), ctx_id=e1@.context_index)
                          gpu_Mat_axpy(1, e1, e2)
-                         },
+                     },
                      `-` = {
-                         e2 <- gpuMatrix(matrix(e2, ncol=ncol(e1), nrow=nrow(e1)), type=typeof(e1))
+                         e2 <- gpuMatrix(matrix(e2, ncol=ncol(e1), nrow=nrow(e1)), type=typeof(e1), ctx_id=e1@.context_index)
                          gpu_Mat_axpy(-1, e2, e1)
-                         },
+                     },
                      `*` = gpuMatScalarMult(e1, e2),
                      `/` = gpuMatScalarDiv(e1, e2),
                      `^` = gpuMatScalarPow(e1, e2),
                      stop("undefined operation")
               )
           },
-valueClass = "gpuMatrix"
+          valueClass = "gpuMatrix"
 )
 
 #' @rdname Arith-methods
@@ -83,20 +91,20 @@ setMethod("Arith", c(e1="numeric", e2="gpuMatrix"),
               op = .Generic[[1]]
               switch(op,
                      `+` = {
-                         e1 = gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2))
+                         e1 = gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2), ctx_id=e2@.context_index)
                          gpu_Mat_axpy(1, e1, e2)
-                         },
+                     },
                      `-` = {
-                         e1 = gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2))
+                         e1 = gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2), ctx_id=e2@.context_index)
                          gpu_Mat_axpy(-1, e2, e1)
-                         },
+                     },
                      `*` = gpuMatScalarMult(e2, e1),
                      `/` = {
-                         e1 = gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2))
+                         e1 = gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2), ctx_id=e2@.context_index)
                          gpuMatElemDiv(e1, e2)
-                         },
+                     },
                      `^` = {
-                         e1 <- gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2))
+                         e1 <- gpuMatrix(matrix(e1, ncol=ncol(e2), nrow=nrow(e2)), type=typeof(e2), ctx_id=e2@.context_index)
                          gpuMatElemPow(e1, e2)
                      },
                      stop("undefined operation")
@@ -125,7 +133,7 @@ setMethod("Arith", c(e1="gpuMatrix", e2="missing"),
 #' @return A gpuR object
 #' @details Currently implemented methods include:
 #' \itemize{
-#'  \item{"sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", 
+#'  \item{"sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh",
 #'  "log10", "exp", "abs"}
 #'  }
 #' @docType methods
@@ -153,14 +161,14 @@ setMethod("Math", c(x="gpuMatrix"),
                      stop("undefined operation")
               )
           },
-valueClass = "gpuMatrix"
+          valueClass = "gpuMatrix"
 )
 
 #' @title gpuR Logarithms and Exponentials
-#' @description \code{log} computes logarithms, by default natural logarithms 
+#' @description \code{log} computes logarithms, by default natural logarithms
 #' and \code{log10} computes common (i.e. base 10) logarithms.  The general form
 #' \code{log(x, base)} computes logarithms with base \code{base}.
-#' 
+#'
 #' \code{exp} computes the exponential function.
 #' @param x A gpuR object
 #' @param base A positive number (complex not currently supported by OpenCL):
@@ -175,7 +183,7 @@ setMethod("log", c(x="gpuMatrix"),
           function(x, base=NULL)
           {
               if(is.null(base)){
-                  gpuMatElemLog(x) 
+                  gpuMatElemLog(x)
               }else{
                   assert_is_numeric(base)
                   gpuMatElemLogBase(x, base)
@@ -195,12 +203,12 @@ setMethod("log", c(x="gpuMatrix"),
 #' @rdname nrow-gpuR
 #' @author Charles Determan Jr.
 #' @export
-setMethod('nrow', signature(x="gpuMatrix"), 
+setMethod('nrow', signature(x="gpuMatrix"),
           function(x) {
               switch(typeof(x),
-                     "integer" = return(cpp_inrow(x@address)),
-                     "float" = return(cpp_fnrow(x@address)),
-                     "double" = return(cpp_dnrow(x@address))
+                     "integer" = return(cpp_gpuMatrix_nrow(x@address, 4L)),
+                     "float" = return(cpp_gpuMatrix_nrow(x@address, 6L)),
+                     "double" = return(cpp_gpuMatrix_nrow(x@address, 8L))
               )
           }
 )
@@ -210,9 +218,9 @@ setMethod('nrow', signature(x="gpuMatrix"),
 setMethod('ncol', signature(x="gpuMatrix"),
           function(x) {
               switch(typeof(x),
-                     "integer" = return(cpp_incol(x@address)),
-                     "float" = return(cpp_fncol(x@address)),
-                     "double" = return(cpp_dncol(x@address))
+                     "integer" = return(cpp_gpuMatrix_ncol(x@address, 4L)),
+                     "float" = return(cpp_gpuMatrix_ncol(x@address, 6L)),
+                     "double" = return(cpp_gpuMatrix_ncol(x@address, 8L))
               )
           }
 )
@@ -230,6 +238,18 @@ setMethod('ncol', signature(x="gpuMatrix"),
 setMethod('dim', signature(x="gpuMatrix"),
           function(x) return(c(nrow(x), ncol(x))))
 
+#' @title gpuMatrix/vclMatrix length method
+#' @description Retrieve number of elements in object
+#' @param x A gpuMatrix/vclMatrix object
+#' @return A numeric value
+#' @docType methods
+#' @rdname length-methods
+#' @author Charles Determan Jr.
+#' @aliases length-gpuMatrix
+#' @export
+setMethod('length', signature(x="gpuMatrix"),
+          function(x) return(nrow(x) * ncol(x)))
+
 #' @title Extract gpuR object elements
 #' @description Operators to extract or replace elements
 #' @param x A gpuR object
@@ -237,6 +257,7 @@ setMethod('dim', signature(x="gpuMatrix"),
 #' @param j indices specifying columns
 #' @param drop missing
 #' @param value data of similar type to be added to gpuMatrix object
+#' @param ... Additional arguments
 #' @docType methods
 #' @rdname extract-methods
 #' @author Charles Determan Jr.
@@ -268,13 +289,45 @@ setMethod("[",
 #' @export
 setMethod("[",
           signature(x = "gpuMatrix", i = "numeric", j = "missing", drop="missing"),
-          function(x, i, j, drop) {
-              switch(typeof(x),
-                     "integer" = return(GetMatRow(x@address, i, 4L)),
-                     "float" = return(GetMatRow(x@address, i, 6L)),
-                     "double" = return(GetMatRow(x@address, i, 8L)),
-                     stop("type not recognized")
+          function(x, i, j, ..., drop) {
+              
+              if(tail(i, 1) > length(x)){
+                  stop("Index out of bounds")
+              }
+              
+              type <- switch(typeof(x),
+                             "integer" = 4L,
+                             "float" = 6L,
+                             "double" = 8L,
+                             stop("type not recognized")
               )
+              
+              if(nargs() == 3){
+                  return(GetMatRow(x@address, i, type))
+              }else{
+                  
+                  output <- vector(ifelse(type == 4L, "integer", "numeric"), length(i))
+                  
+                  nr <- nrow(x)
+                  col_idx <- 1
+                  for(elem in seq_along(i)){
+                      if(i[elem] > nr){
+                          tmp <- ceiling(i[elem]/nr)
+                          if(tmp != col_idx){
+                              col_idx <- tmp
+                          }
+                          
+                          row_idx <- i[elem] - (nr * (col_idx - 1))
+                          
+                      }else{
+                          row_idx <- i[elem]
+                      }
+                      
+                      output[elem] <- GetMatElement(x@address, row_idx, col_idx, type)
+                  }
+                  
+                  return(output)
+              }
           })
 
 #' @rdname extract-methods
@@ -293,18 +346,55 @@ setMethod("[",
 #' @export
 setMethod("[<-",
           signature(x = "gpuMatrix", i = "numeric", j = "missing", value="numeric"),
-          function(x, i, j, value) {
-              if(length(value) != ncol(x)){
-                  stop("number of items to replace is not a multiple of replacement length")
+          function(x, i, j, ..., value) {
+              
+              type <- switch(typeof(x),
+                             "integer" = 4L,
+                             "float" = 6L,
+                             "double" = 8L,
+                             stop("type not recognized")
+              )
+              
+              if(nargs() == 4){
+                  assert_all_are_in_closed_range(i, lower = 1, upper = nrow(x))
+                  
+                  if(length(value) != ncol(x)){
+                      stop("number of items to replace is not a multiple of replacement length")
+                  }
+                  
+                  SetMatRow(x@address, i, value, type)
+                  
+              }else{
+                  if(length(value) != length(i)){
+                      if(length(value) == 1){
+                          value <- rep(value, length(i))
+                      }else{
+                          stop("number of items to replace is not a multiple of replacement length")
+                      }
+                  }
+                  
+                  
+                  output <- vector(ifelse(type == 4L, "integer", "numeric"), length(i))
+                  
+                  nr <- nrow(x)
+                  col_idx <- 1
+                  for(elem in seq_along(i)){
+                      if(i[elem] > nr){
+                          tmp <- ceiling(i[elem]/nr)
+                          if(tmp != col_idx){
+                              col_idx <- tmp
+                          }
+                          
+                          row_idx <- i[elem] - (nr * (col_idx - 1))
+                          
+                      }else{
+                          row_idx <- i[elem]
+                      }
+                      
+                      SetMatElement(x@address, row_idx, col_idx, value[elem], type)
+                  }
               }
               
-              assert_all_are_in_closed_range(i, lower = 1, upper = nrow(x))
-              
-              switch(typeof(x),
-                     "float" = SetMatRow(x@address, i, value, 6L),
-                     "double" = SetMatRow(x@address, i, value, 8L),
-                     stop("type not recognized")
-              )
               return(x)
           })
 
@@ -529,32 +619,25 @@ setMethod("tcrossprod",
 setMethod("dist", signature(x="gpuMatrix"),
           function(x, method = "euclidean", diag = FALSE, upper = FALSE, p = 2)
           {
-              device_flag <- 
-                  switch(options("gpuR.default.device.type")$gpuR.default.device.type,
-                         "cpu" = 1, 
-                         "gpu" = 0,
-                         stop("unrecognized default device option"
-                         )
-                  )
               
               type = typeof(x)
               
-              if( type == "integer"){
-                  stop("Integer type not currently supported")
-              }
+              # if( type == "integer"){
+              #     stop("Integer type not currently supported")
+              # }
               
               D <- gpuMatrix(nrow=nrow(x), ncol=nrow(x), type=type)
               
               switch(method,
                      "euclidean" = gpuMatrix_euclidean(
-                         x, 
+                         x,
                          D,
                          diag,
                          upper,
                          p,
                          FALSE),
                      "sqEuclidean" = gpuMatrix_euclidean(
-                         x, 
+                         x,
                          D,
                          diag,
                          upper,
@@ -583,30 +666,22 @@ setMethod("distance", signature(x = "gpuMatrix", y = "gpuMatrix"),
                   stop("columns in x and y are not equivalent")
               }
               
-              device_flag <- 
-                  switch(options("gpuR.default.device.type")$gpuR.default.device.type,
-                         "cpu" = 1, 
-                         "gpu" = 0,
-                         stop("unrecognized default device option"
-                         )
-                  )
-              
               type = typeof(x)
               
-              if( type == "integer"){
-                  stop("Integer type not currently supported")
-              }
+              # if( type == "integer"){
+              #     stop("Integer type not currently supported")
+              # }
               
               D <- gpuMatrix(nrow=nrow(x), ncol=nrow(y), type=type)
               
               switch(method,
                      "euclidean" = gpuMatrix_peuclidean(
-                         x, 
+                         x,
                          y,
                          D,
                          FALSE),
                      "sqEuclidean" = gpuMatrix_peuclidean(
-                         x, 
+                         x,
                          y,
                          D,
                          TRUE),
@@ -629,21 +704,36 @@ setMethod("deepcopy", signature(object ="gpuMatrix"),
           function(object){
               
               out <- switch(typeof(object),
-                            "integer" = new("igpuMatrix",
-                                            address = cpp_deepcopy_gpuMatrix(object@address, 4L)),
-                            "float" = new("fgpuMatrix", 
-                                          address = cpp_deepcopy_gpuMatrix(object@address, 6L)),
-                            "double" = new("dgpuMatrix", 
-                                           address = cpp_deepcopy_gpuMatrix(object@address, 8L)),
+                            "integer" = new(class(object)[1],
+                                            address = cpp_deepcopy_gpuMatrix(object@address, 4L),
+                                            .context_index = object@.context_index,
+                                            .platform_index = object@.platform_index,
+                                            .platform = object@.platform,
+                                            .device_index = object@.device_index,
+                                            .device = object@.device),
+                            "float" = new(class(object)[1],
+                                          address = cpp_deepcopy_gpuMatrix(object@address, 6L),
+                                          .context_index = object@.context_index,
+                                          .platform_index = object@.platform_index,
+                                          .platform = object@.platform,
+                                          .device_index = object@.device_index,
+                                          .device = object@.device),
+                            "double" = new(class(object)[1],
+                                           address = cpp_deepcopy_gpuMatrix(object@address, 8L),
+                                           .context_index = object@.context_index,
+                                           .platform_index = object@.platform_index,
+                                           .platform = object@.platform,
+                                           .device_index = object@.device_index,
+                                           .device = object@.device),
                             stop("unrecognized type")
-                            )
+              )
               return(out)
               
           })
 
 #' @rdname gpuR-block
 setMethod("block",
-          signature(object = "gpuMatrix", 
+          signature(object = "gpuMatrix",
                     rowStart = "integer", rowEnd = "integer",
                     colStart = "integer", colEnd = "integer"),
           function(object, rowStart, rowEnd, colStart, colEnd){
@@ -655,7 +745,7 @@ setMethod("block",
               ptr <- switch(typeof(object),
                             "float" = {
                                 address <- gpuMatBlock(object@address, rowStart, rowEnd, colStart, colEnd, 6L)
-                                new("fgpuMatrixBlock", 
+                                new("fgpuMatrixBlock",
                                     address = address,
                                     .context_index = object@.context_index,
                                     .platform_index = object@.platform_index,
@@ -665,7 +755,7 @@ setMethod("block",
                             },
                             "double" = {
                                 address <- gpuMatBlock(object@address, rowStart, rowEnd, colStart, colEnd, 8L)
-                                new("dgpuMatrixBlock", 
+                                new("dgpuMatrixBlock",
                                     address = address,
                                     .context_index = object@.context_index,
                                     .platform_index = object@.platform_index,
@@ -691,15 +781,33 @@ setMethod("cbind2",
               ptr <- switch(typeof(x),
                             "integer" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 4L)
-                                new("igpuMatrix", address = address)
+                                new("igpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "float" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 6L)
-                                new("fgpuMatrix", address = address)
+                                new("fgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "double" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 8L)
-                                new("dgpuMatrix", address = address)
+                                new("dgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             stop("type not recognized")
               )
@@ -716,15 +824,33 @@ setMethod("cbind2",
               ptr <- switch(typeof(x),
                             "integer" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 4L)
-                                new("igpuMatrix", address = address)
+                                new("igpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "float" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 6L)
-                                new("fgpuMatrix", address = address)
+                                new("fgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "double" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 8L)
-                                new("dgpuMatrix", address = address)
+                                new("dgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             stop("type not recognized")
               )
@@ -741,15 +867,33 @@ setMethod("cbind2",
               ptr <- switch(typeof(x),
                             "integer" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 4L)
-                                new("igpuMatrix", address = address)
+                                new("igpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "float" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 6L)
-                                new("fgpuMatrix", address = address)
+                                new("fgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "double" = {
                                 address <- cpp_cbind_gpuMatrix(x@address, y@address, 8L)
-                                new("dgpuMatrix", address = address)
+                                new("dgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             stop("type not recognized")
               )
@@ -767,15 +911,33 @@ setMethod("rbind2",
               ptr <- switch(typeof(x),
                             "integer" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 4L)
-                                new("igpuMatrix", address = address)
+                                new("igpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "float" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 6L)
-                                new("fgpuMatrix", address = address)
+                                new("fgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "double" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 8L)
-                                new("dgpuMatrix", address = address)
+                                new("dgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             stop("type not recognized")
               )
@@ -792,15 +954,33 @@ setMethod("rbind2",
               ptr <- switch(typeof(x),
                             "integer" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 4L)
-                                new("igpuMatrix", address = address)
+                                new("igpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "float" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 6L)
-                                new("fgpuMatrix", address = address)
+                                new("fgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "double" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 8L)
-                                new("dgpuMatrix", address = address)
+                                new("dgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             stop("type not recognized")
               )
@@ -817,15 +997,33 @@ setMethod("rbind2",
               ptr <- switch(typeof(x),
                             "integer" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 4L)
-                                new("igpuMatrix", address = address)
+                                new("igpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "float" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 6L)
-                                new("fgpuMatrix", address = address)
+                                new("fgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             "double" = {
                                 address <- cpp_rbind_gpuMatrix(x@address, y@address, 8L)
-                                new("dgpuMatrix", address = address)
+                                new("dgpuMatrix",
+                                    address = address,
+                                    .context_index = x@.context_index,
+                                    .platform_index = x@.platform_index,
+                                    .platform = x@.platform,
+                                    .device_index = x@.device_index,
+                                    .device = x@.device)
                             },
                             stop("type not recognized")
               )
@@ -847,7 +1045,7 @@ setMethod("rbind2",
 #' @export
 setMethod("Summary", c(x="gpuMatrix"),
           function(x, ..., na.rm)
-          {              
+          {
               op = .Generic
               result <- switch(op,
                                `max` = gpuMatrix_max(x),
@@ -858,7 +1056,7 @@ setMethod("Summary", c(x="gpuMatrix"),
           }
 )
 
-
+#' @export
 setMethod("t", c(x = "gpuMatrix"),
           function(x){
               return(gpuMatrix_t(x))

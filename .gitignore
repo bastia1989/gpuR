@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 src/*.o
-src/*.so
-src/*.dll
+src/*.a
+*.so
+*.dll
 src/Makevars
+.httr-oauth

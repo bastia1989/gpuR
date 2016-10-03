@@ -1,7 +1,47 @@
 \name{NEWS}
 \title{News for Package 'gpuR'}
 
-\section{Unreleased Version 1.1.0}{
+
+\section{Version 1.1.4}{
+    \itemize{
+        \item New Features:
+        \itemize{
+            \item Automatically detect available SDK on install if available
+            \item Simplified installation to build OpenCL ICD when no SDK installed (thanks Yixuan Qui)
+            \item Control over individual OpenCL contexts to allow user to choose device to use
+            \item Added as.* methods for vclMatrix/Vector and gpuMatrix/Vector objects
+            \item Added str method for matrix objects
+            \item Added length method for matrix objects
+            \item Added solve method for square vclMatrix objects
+            \item Added QR-decompsition, SVD, Cholesky for square gpuMatrix/vclMatrix objects
+        }
+        \item Features in Progress:
+        \itemize{
+            \item 'device type' checks (i.e. deal with CPU & GPU objects), perhaps detect type from object?
+            \item Parallel GPU functionality
+            \item Add diag and diag<- method for matix objects
+            \item In-place operations
+            \item Accept custom OpenCL kernels
+        }
+    }
+}
+
+\section{Version 1.1.2}{
+    \itemize{
+        \item New Features:
+        \itemize{
+            \item fixed major bugs with cbind/rbind and deepcopy reflecting new class architectures
+        }
+        \item Features in Progress:
+        \itemize{
+            \item Additional matrix functions (QR-decompsition, SVD, Cholesky, solve)
+            \item 'device type' checks (i.e. deal with CPU & GPU objects), perhaps detect type from object?
+            \item Control over OpenCL contexts for mutliple GPUs
+        }
+    }
+}
+
+\section{Version 1.1.0}{
     \itemize{
         \item New Features:
         \itemize{
