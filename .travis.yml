@@ -19,8 +19,9 @@ before_install:
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - wget https://www.khronos.org/registry/cl/api/2.1/cl.hpp
   - mkdir opencl_headers
-  - cp /System/Library/Frameworks/OpenCL.framework/Headers/* opencl_headers/
-  - mv cl.hpp opencl_headers/
+  - mkdir opencl_headers/OpenCL
+  - cp /System/Library/Frameworks/OpenCL.framework/Headers/* opencl_headers/OpenCL/
+  - mv cl.hpp opencl_headers/OpenCL/
   - chmod 755 ./travis-tool.sh
   - ./travis-tool.sh bootstrap
 
