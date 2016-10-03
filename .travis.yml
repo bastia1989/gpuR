@@ -10,6 +10,7 @@ env:
   global:
     - R_BUILD_ARGS="--no-build-vignettes --no-manual --no-resave-data"
     - R_CHECK_ARGS="--no-build-vignettes --no-manual"
+    - OPENCL_IN="opencl_headers"
 
 before_install:
   - brew update
@@ -17,7 +18,9 @@ before_install:
   - clang -v
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - wget https://www.khronos.org/registry/cl/api/2.1/cl.hpp
-  - cp cl.hpp /System/Library/Frameworks/OpenCL.framework/Headers/cl.hpp
+  - mkdir opencl_headers
+  - cp /System/Library/Frameworks/OpenCL.framework/Headers/* opencl_headers/
+  - mv cl.hpp opencl_headers/
   - chmod 755 ./travis-tool.sh
   - ./travis-tool.sh bootstrap
 
