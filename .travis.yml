@@ -11,7 +11,7 @@ env:
     - R_CHECK_ARGS="--no-build-vignettes --no-manual"
 
 before_install:
-  - sudo brew update
+  - brew update
   - if [ -n "$GH_TOKEN" ]; then git config --global github.accesstoken ${GH_TOKEN}; fi;
   - clang -v
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
