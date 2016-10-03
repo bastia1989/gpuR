@@ -18,6 +18,7 @@ before_install:
   - clang -v
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - wget https://www.khronos.org/registry/cl/api/2.1/cl.hpp
+  - pwd
   - mkdir opencl_headers
   - mkdir opencl_headers/OpenCL
   - cp /System/Library/Frameworks/OpenCL.framework/Headers/* opencl_headers/OpenCL/
